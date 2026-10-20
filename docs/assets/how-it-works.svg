@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 720" width="1400" height="720" role="img" aria-labelledby="t d">
+  <title id="t">How the second brain works</title>
+  <desc id="d">Files dropped in inbox are triaged into immutable source, parsed into cited knowledge notes, loaded into DuckDB with a deterministic graph, and used by the agent to produce analysis, designs, registers and ADRs. Questions are answered graph first, then SQL, then by reading exact line ranges.</desc>
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4F7CFF"/>
+      <stop offset="1" stop-color="#2EC4B6"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4F7CFF" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#4F7CFF"/>
+      <stop offset="1" stop-color="#2EC4B6" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#4F7CFF" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#4F7CFF" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .sans { font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace; }
+      .kick { font-size: 16px; letter-spacing: 5px; fill: #2EC4B6; }
+      .h2 { font-size: 40px; font-weight: 800; fill: #FFFFFF; }
+      .num { font-size: 15px; font-weight: 700; fill: #FFFFFF; }
+      .name { font-size: 22px; font-weight: 700; fill: #FFFFFF; }
+      .txt { font-size: 15px; fill: #CFC9D3; }
+      .tag { font-size: 13px; fill: #2EC4B6; }
+      .step { font-size: 15px; fill: #ECE6EF; }
+      .small { font-size: 14px; fill: #8E8794; }
+      .card { fill: #FFFFFF; fill-opacity: .05; stroke: #FFFFFF; stroke-opacity: .14; }
+      .flow { stroke-dasharray: 8 8; animation: dash 1.6s linear infinite; }
+      @keyframes dash { to { stroke-dashoffset: -32; } }
+    </style>
+  </defs>
+
+  <rect width="1400" height="720" rx="28" fill="#0E0D12"/>
+  <circle cx="700" cy="330" r="520" fill="url(#glow)"/>
+
+  <text x="64" y="80" class="sans kick">HOW IT WORKS</text>
+  <text x="62" y="130" class="sans h2">From a pile of files to <tspan fill="url(#grad)" style="fill:url(#grad)">cited answers.</tspan></text>
+
+  <!-- five layer cards -->
+  <g class="sans">
+    <!-- 1 inbox -->
+    <rect x="64" y="180" width="236" height="250" rx="18" class="card"/>
+    <circle cx="100" cy="216" r="18" fill="#786E78" fill-opacity=".45" stroke="#FFFFFF" stroke-opacity=".4"/>
+    <text x="100" y="221" text-anchor="middle" class="num">1</text>
+    <text x="88" y="276" class="mono name">inbox/</text>
+    <text x="88" y="306" class="txt">New material lands</text>
+    <text x="88" y="327" class="txt">here, untrusted until</text>
+    <text x="88" y="348" class="txt">it is triaged.</text>
+    <text x="88" y="404" class="mono tag">/ingest</text>
+
+    <!-- 2 source -->
+    <rect x="330" y="180" width="236" height="250" rx="18" class="card"/>
+    <circle cx="366" cy="216" r="18" fill="#2EC4B6" fill-opacity=".35" stroke="#2EC4B6"/>
+    <text x="366" y="221" text-anchor="middle" class="num">2</text>
+    <text x="354" y="276" class="mono name">source/</text>
+    <text x="354" y="306" class="txt">Originals exactly as</text>
+    <text x="354" y="327" class="txt">received. Never edited,</text>
+    <text x="354" y="348" class="txt">never committed.</text>
+    <text x="354" y="404" class="mono tag">immutable</text>
+
+    <!-- 3 knowledge -->
+    <rect x="596" y="180" width="236" height="250" rx="18" class="card"/>
+    <circle cx="632" cy="216" r="18" fill="#9B78FF" fill-opacity=".4" stroke="#9B78FF"/>
+    <text x="632" y="221" text-anchor="middle" class="num">3</text>
+    <text x="620" y="276" class="mono name">knowledge/</text>
+    <text x="620" y="306" class="txt">extracted/ by parsers,</text>
+    <text x="620" y="327" class="txt">curated/ by you. Each</text>
+    <text x="620" y="348" class="txt">note has an evidence level.</text>
+    <text x="620" y="404" class="mono tag">evidence-ranked</text>
+
+    <!-- 4 metadata -->
+    <rect x="862" y="180" width="236" height="250" rx="18" class="card"/>
+    <circle cx="898" cy="216" r="18" fill="#4F7CFF" fill-opacity=".5" stroke="#4F7CFF"/>
+    <text x="898" y="221" text-anchor="middle" class="num">4</text>
+    <text x="886" y="276" class="mono name">metadata/</text>
+    <text x="886" y="306" class="txt">DuckDB: every table,</text>
+    <text x="886" y="327" class="txt">the catalog, registers</text>
+    <text x="886" y="348" class="txt">and a deterministic graph.</text>
+    <text x="886" y="404" class="mono tag">SQL, not guessing</text>
+
+    <!-- 5 artifacts -->
+    <rect x="1128" y="180" width="236" height="250" rx="18" class="card" style="stroke:#4F7CFF;stroke-opacity:.8"/>
+    <circle cx="1164" cy="216" r="18" fill="#FFFFFF" fill-opacity=".14" stroke="#FFFFFF"/>
+    <text x="1164" y="221" text-anchor="middle" class="num">5</text>
+    <text x="1152" y="276" class="mono name">artifacts/</text>
+    <text x="1152" y="306" class="txt">Analysis, designs,</text>
+    <text x="1152" y="327" class="txt">open points, claims,</text>
+    <text x="1152" y="348" class="txt">decisions, ADRs.</text>
+    <text x="1152" y="404" class="mono tag">cited deliverables</text>
+  </g>
+
+  <!-- arrows between cards -->
+  <g stroke="url(#beam)" stroke-width="3" fill="none">
+    <path class="flow" d="M300 305 H330"/>
+    <path class="flow" d="M566 305 H596"/>
+    <path class="flow" d="M832 305 H862"/>
+    <path class="flow" d="M1098 305 H1128"/>
+  </g>
+  <g fill="#4F7CFF">
+    <path d="M324 299 L332 305 L324 311 Z"/>
+    <path d="M590 299 L598 305 L590 311 Z"/>
+    <path d="M856 299 L864 305 L856 311 Z"/>
+    <path d="M1122 299 L1130 305 L1122 311 Z"/>
+  </g>
+
+  <!-- answering a question -->
+  <text x="64" y="500" class="sans kick">ANSWERING A QUESTION — CHEAPEST STEP FIRST</text>
+  <g class="sans">
+    <rect x="64" y="522" width="230" height="52" rx="26" fill="#4F7CFF" fill-opacity=".25" stroke="#4F7CFF"/>
+    <text x="179" y="554" text-anchor="middle" class="mono step">/ask &lt;question&gt;</text>
+    <rect x="334" y="522" width="230" height="52" rx="26" class="card"/>
+    <text x="449" y="554" text-anchor="middle" class="step">1 · knowledge graph</text>
+    <rect x="604" y="522" width="230" height="52" rx="26" class="card"/>
+    <text x="719" y="554" text-anchor="middle" class="step">2 · SQL on DuckDB</text>
+    <rect x="874" y="522" width="230" height="52" rx="26" class="card"/>
+    <text x="989" y="554" text-anchor="middle" class="step">3 · read line ranges</text>
+    <rect x="1144" y="522" width="220" height="52" rx="26" fill="#2EC4B6" fill-opacity=".16" stroke="#2EC4B6"/>
+    <text x="1254" y="554" text-anchor="middle" class="mono step">path#L12-L40</text>
+  </g>
+  <g stroke="url(#beam)" stroke-width="3" fill="none">
+    <path class="flow" d="M294 548 H334"/><path class="flow" d="M564 548 H604"/>
+    <path class="flow" d="M834 548 H874"/><path class="flow" d="M1104 548 H1144"/>
+  </g>
+
+  <!-- guards -->
+  <rect x="64" y="612" width="1300" height="64" rx="16" fill="#FFFFFF" fill-opacity=".04" stroke="#FFFFFF" stroke-opacity=".12"/>
+  <g class="sans">
+    <text x="92" y="651" class="mono tag" style="font-size:15px">GUARDS</text>
+    <text x="178" y="651" class="step">Hooks and a lint, for Claude Code and GitHub Copilot alike: sources, extracted text and generated views can't be edited.</text>
+  </g>
+</svg>

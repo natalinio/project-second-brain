@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "uv run --quiet python tools/kb/hooks/pre_tool.py",
+        "powershell": "uv run --quiet python tools/kb/hooks/pre_tool.py",
+        "cwd": ".",
+        "timeoutSec": 30
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "uv run --quiet python tools/kb/hooks/post_tool.py",
+        "powershell": "uv run --quiet python tools/kb/hooks/post_tool.py",
+        "cwd": ".",
+        "timeoutSec": 60
+      }
+    ]
+  }
+}

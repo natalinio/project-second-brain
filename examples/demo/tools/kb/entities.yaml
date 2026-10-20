@@ -1,0 +1,7 @@
+# Concept dictionary — demo configuration.
+concepts:
+  - {id: ORDER_SERVICE, kind: system,  aliases: [order service, order-service]}
+  - {id: WAREHOUSE,     kind: system,  aliases: [reporting warehouse, warehouse]}
+  - {id: FINANCE_TEAM,  kind: party,   aliases: [finance team, finance]}
+  - {id: RETENTION,     kind: concept, aliases: [retention, retained, purge, purged, purging]}
+  - {id: CANCELLATION,  kind: concept, aliases: [cancelled order, cancelled orders, cancellation]}

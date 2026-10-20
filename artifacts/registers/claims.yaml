@@ -1,0 +1,6 @@
+meta:
+  title: Claims register
+  heading: Claims register
+  updated: 2026-01-01
+  preamble: Every atomic assertion about the current state that a design or decision depends on, with its evidence level and source. A design resting on anything weaker than `primary-doc` cites the claim id. Edit `claims.yaml` (or `/capture claim ...`); this view is generated.
+items: []

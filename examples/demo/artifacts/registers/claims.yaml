@@ -1,0 +1,26 @@
+meta:
+  title: Claims register
+  heading: Claims register
+  updated: 2026-02-04
+  preamble: Assertions about the current state that a design depends on (fictional demo).
+items:
+- id: C-001
+  claim: ORDERS_DAILY is rebuilt as a full snapshot every night.
+  object: ORDERS_DAILY
+  evidence: primary-doc
+  source: knowledge/extracted/specs/order-service-spec-v1-2.md#L32
+  contradicted_by: ''
+  dependency: artifacts/design/reporting-refresh.md
+  status: stands
+  history: []
+- id: C-002
+  claim: Cancelled orders are purged from ORDERS_RAW after 90 days.
+  object: ORDERS_RAW
+  evidence: [primary-doc, verbal]
+  source: knowledge/extracted/specs/order-service-spec-v1-2.md#L36-L37
+  contradicted_by: knowledge/extracted/correspondence/2026-02-03-cancelled-order-retention.md
+  dependency: artifacts/design/reporting-refresh.md
+  status: conflicting
+  history:
+  - date: 2026-02-03
+    note: Finance e-mail requires 180 days; see OP-001.

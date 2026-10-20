@@ -1,0 +1,24 @@
+meta:
+  title: Open points
+  heading: Open points
+  updated: 2026-02-04
+  preamble: Questions we cannot answer from the evidence yet (fictional demo).
+items:
+- id: OP-001
+  title: Retention of cancelled orders — 90 days (spec, kickoff) or 180 days (finance e-mail)?
+  status: narrowed
+  owner: Order service team
+  priority: high
+  text: The specification and the kickoff say cancelled orders are purged from ORDERS_RAW after 90 days;
+    finance wrote that the audit requirement is now 180 days.
+  impact: SALES_REPORT under-reports cancellations older than 90 days; audit finding risk.
+  history:
+  - date: 2026-02-03
+    note: Finance confirmed 180 days in writing (knowledge/extracted/correspondence/2026-02-03-cancelled-order-retention.md).
+- id: OP-002
+  title: Who owns CUSTOMER_MASTER?
+  status: open
+  owner: TBD
+  text: Maintained by hand by two people, no formal owner (kickoff 2026-01-28).
+  impact: Nobody accountable for customer attributes in ORDERS_DAILY.
+  history: []

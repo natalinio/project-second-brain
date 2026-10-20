@@ -1,0 +1,102 @@
+# Single source of truth for the KB contract. Read by tools/kb/kbcore.py.
+# Changing a value here changes what the lint, the hooks and the graph accept —
+# record why in an ADR (artifacts/adr/).
+
+evidence:          # strongest first; rank is the list position
+  - verified       # confirmed against a system export, DDL, source code or a system catalog
+  - primary-doc    # written in a document produced by whoever owns the subject (the team or party accountable for it)
+  - verbal         # said in a meeting / workshop / chat, written nowhere authoritative
+  - derived-llm    # produced by an LLM from the documents — hypothesis, never fact
+  - assumed        # our own inference filling a gap — label it wherever it is used
+
+status:
+  extracted: [extracted, checked, superseded]   # knowledge/extracted — machine output
+  curated: [draft, checked, living, superseded]  # knowledge/curated — authored syntheses
+  artifacts: [draft, for-review, proposed, accepted, sent, living, superseded, generated]
+
+# Folder contract. First matching prefix wins.
+#   perspective  observed = what is (evidence about the world as it stands)
+#                intended = what we plan or decide (designs, ADRs)
+#                Never mix the two in one statement.
+areas:
+  - {prefix: knowledge/extracted/, origin: extracted, perspective: observed}
+  - {prefix: knowledge/curated/,   origin: curated,   perspective: observed}
+  - {prefix: knowledge/,           origin: curated,   perspective: observed}   # index.md
+  - {prefix: artifacts/_imported/, origin: imported,  perspective: observed, evidence: derived-llm}
+  - {prefix: artifacts/analysis/,  origin: artifact,  perspective: observed}
+  - {prefix: artifacts/design/,    origin: artifact,  perspective: intended}
+  - {prefix: artifacts/registers/, origin: artifact,  perspective: mixed}
+  - {prefix: artifacts/adr/,       origin: artifact,  perspective: intended}
+  - {prefix: artifacts/,           origin: artifact,  perspective: mixed}
+  - {prefix: docs/,                origin: meta,      perspective: meta}
+
+# Markdown roots the catalog, graph and lint scan, and the prefixes they ignore.
+md_roots: [knowledge, artifacts, docs]
+skip_prefixes: [docs/templates/, docs/_conversations/]
+
+# Write protection enforced by the PreToolUse hook (tools/kb/hooks/pre_tool.py).
+protected:
+  immutable: [source/]                   # raw originals: never written by the agent
+  immutable_except: [source/MANIFEST.md] # ...except the register of what was received
+  body_locked: [knowledge/extracted/]    # parser output: only the frontmatter may change
+  accepted_adr_dir: artifacts/adr/       # an ADR with status: accepted is body-locked too
+
+# Files the tools generate on demand and git ignores: citing them is not a broken path.
+generated_paths: [metadata/extraction_report.md, metadata/sample_formats.md,
+                  metadata/schemas/duckdb_catalog.md, metadata/inventory.duckdb, metadata/kb.duckdb]
+
+# Optional DuckDB holding every tabular asset (built by tools/ingest/build_inventory.py).
+structured_db: metadata/inventory.duckdb
+
+required:
+  knowledge: [title, type, status, evidence, updated]
+  artifacts: [title, type, status, updated]
+  docs: [title, type, status, updated]
+
+# Evidence a note type may carry. A meeting is verbal by definition; a stronger level
+# needs an `evidence_note` explaining why (e.g. minutes formally circulated as a document).
+type_evidence:
+  meeting-note: [verbal]
+  object-definition: [verified]
+  imported-deliverable: [derived-llm]
+
+# Notes larger than this (characters) must carry an `abstract` in frontmatter, so an
+# agent can decide from the catalog whether to open them at all.
+abstract_threshold: 40000
+
+# Registers: the YAML is the source of truth, the .md views are generated.
+registers:
+  open_points:
+    id: 'OP-\d{3}'
+    kind: op
+    status: [open, narrowed, deferred, resolved, closed]
+  claims:
+    id: 'C-\d{3}'
+    kind: claim
+    status: [open, confirmed, stands, conflicting, contradicted, unsupported, closed]
+  decisions:
+    id: 'D-\d{3}'
+    kind: decision
+adr_id: 'ADR-\d{4}'
+
+# Catalog groups rendered in knowledge/index.md (first matching prefix wins).
+catalog_groups:
+  - {prefix: knowledge/extracted/specs/,          label: "Specifications (extracted)"}
+  - {prefix: knowledge/extracted/system_exports/, label: "System exports (extracted, verified)"}
+  - {prefix: knowledge/extracted/meeting_notes/,  label: "Meeting notes & transcripts (extracted, verbal)"}
+  - {prefix: knowledge/extracted/correspondence/, label: "Correspondence (extracted)"}
+  - {prefix: knowledge/extracted/,                label: "Other extracted material"}
+  - {prefix: knowledge/curated/,                  label: "Curated notes"}
+
+# Identifier heuristics for the graph: which names of objects (tables, jobs, files,
+# components, ...) are specific enough to be matched verbatim in the notes.
+identifier:
+  min_length: 5
+  # usable if it contains '_', a digit or '.', or is all upper case — tune per project
+  pattern: '^(?:.*[_\d.].*|[A-Z0-9]+)$'
+  stop: [STATUS, TARGET, SOURCE, DELETE, INSERT, UPDATE, SELECT, TABLE, VIEW,
+         DAILY, WEEKLY, MONTHLY, TODO, "NULL", "TRUE", "FALSE", YYYYMMDD]
+
+# Ad-hoc evidence legends in deliverables (e.g. "V = verified"). Assumptions belong in the
+# claims register instead; every regex listed here is flagged by the lint as a warning.
+legend_patterns: []

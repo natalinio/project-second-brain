@@ -1,0 +1,6 @@
+# The one file to edit after forking. Read by tools/kb/bootstrap.py (/init-brain).
+project_name: My Project
+description: ""            # one sentence: what the project is about
+language: en               # language of notes and deliverables (originals are quoted verbatim)
+domains: []                # short slugs used in the `domain:` frontmatter field, e.g. [billing, crm, reporting]
+owners: []                 # people or teams who own open points, e.g. [Data team, Operations, TBD]

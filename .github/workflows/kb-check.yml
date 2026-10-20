@@ -1,0 +1,26 @@
+name: kb-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install
+        run: uv sync --extra dev
+      - name: Agent layer is consistent
+        run: uv run pytest -q tests/test_agents.py
+      - name: Tests (skeleton + demo project)
+        run: uv run pytest -q
+      - name: Knowledge base is clean
+        run: |
+          uv run python tools/kb/refresh.py
+          uv run python tools/kb/refresh.py --check

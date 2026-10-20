@@ -1,0 +1,30 @@
+From: Finance lead <finance@example.org>
+To: Data Team <data-team@example.org>
+Subject: Re: Retention of cancelled orders
+Date: Tue, 03 Feb 2026 10:12:00 +0100
+Message-ID: <demo-0002@example.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Hi all,
+
+to confirm in writing: finance needs cancelled orders kept for 180 days, not 90.
+The 90 days mentioned at the kickoff was the old policy. The audit requirement
+changed in 2025 and the order service team has not updated ORDERS_RAW purging yet.
+
+Regards,
+Finance lead
+Finance team
+
+-----Original Message-----
+From: Data Team <data-team@example.org>
+Sent: Monday, February 2, 2026 4:40 PM
+To: Finance lead <finance@example.org>
+Subject: Retention of cancelled orders
+
+Hi,
+at the kickoff we noted that cancelled orders are purged from ORDERS_RAW after 90 days.
+Can you confirm this is the retention finance expects for ORDERS_DAILY as well?
+
+Thanks,
+Data team

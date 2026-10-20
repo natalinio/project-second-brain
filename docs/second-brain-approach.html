@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Project Second Brain</title>
+<style>
+/* ===========================================
+   THEME — "Layer Stack": blue and teal on night, glass planes
+   Change these to restyle the whole deck
+   =========================================== */
+:root {
+  --stage-bg: #07070a;
+  --night: #0E0D12;
+  --night-2: #16141B;
+  --accent: #4F7CFF;
+  --accent-soft: #7FA0FF;
+  --accent-2: #2EC4B6;
+  --ash: #8E8794;
+  --mist: #CFC9D3;
+  --white: #FFFFFF;
+  --glass: rgba(255,255,255,.06);
+  --line: rgba(255,255,255,.14);
+
+  --font-display: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --slide-bg: var(--night);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE — viewport-base.css (full)
+   =========================================== */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff); }
+.slide { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--slide-bg, #fff); }
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; background: #fff; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+  .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* ===========================================
+   SLIDE SHELL — night field with ember glow
+   =========================================== */
+.slide { color: var(--white); font-family: var(--font-body); transition: opacity .6s var(--ease);
+  background: radial-gradient(900px 700px at var(--gx, 1350px) var(--gy, 560px), rgba(79,124,255,.20), transparent 60%),
+              radial-gradient(600px 500px at 200px 1000px, rgba(46,196,182,.07), transparent 60%), var(--night); }
+.kick { position: absolute; left: 110px; top: 96px; font-size: 21px; letter-spacing: .32em; text-transform: uppercase; color: var(--accent-2); }
+.title { position: absolute; left: 104px; top: 150px; font-family: var(--font-display); font-weight: 800; font-size: 76px; line-height: 1.04; letter-spacing: -.01em; max-width: 1500px; }
+.title em, .hero em { font-style: normal; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.line { font-size: 30px; font-weight: 300; line-height: 1.45; color: var(--mist); }
+.pg { position: absolute; right: 110px; bottom: 64px; font-family: var(--font-mono); font-size: 18px; color: var(--ash); letter-spacing: .1em; }
+.brand { position: absolute; left: 110px; bottom: 64px; font-family: var(--font-mono); font-size: 18px; color: var(--ash); letter-spacing: .1em; text-transform: uppercase; }
+
+/* ===========================================
+   REVEAL — staggered entrance on the active slide
+   =========================================== */
+.rv { opacity: 0; transform: translateY(26px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+.slide.visible .rv { opacity: 1; transform: none; }
+.t1 { transition-delay: .05s } .t2 { transition-delay: .15s } .t3 { transition-delay: .25s } .t4 { transition-delay: .35s }
+.t5 { transition-delay: .45s } .t6 { transition-delay: .55s } .t7 { transition-delay: .65s } .t8 { transition-delay: .75s }
+.t9 { transition-delay: .85s } .t10 { transition-delay: .95s }
+
+/* ===========================================
+   SIGNATURE COMPONENT — isometric layer stack
+   Wrapper .stackbox is positioned per slide; planes rise on entry.
+   Label rows sit at fixed offsets (top 50 + 95·n) to the right.
+   =========================================== */
+.stackbox { position: absolute; width: 760px; height: 760px; }
+.scene { position: absolute; inset: 0; perspective: 2400px; }
+.stack { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX(58deg) rotateZ(-38deg); }
+.plane { position: absolute; left: 170px; top: 170px; width: 420px; height: 420px; border-radius: 22px; border: 2px solid var(--line);
+  box-shadow: 0 0 60px rgba(79,124,255,.18) inset; transition: transform 1.2s var(--ease), box-shadow .6s, background .6s, border-color .6s; transform: translateZ(0); }
+.slide.visible .p1 { transform: translateZ(0); }
+.slide.visible .p2 { transform: translateZ(90px); transition-delay: .1s; }
+.slide.visible .p3 { transform: translateZ(180px); transition-delay: .2s; }
+.slide.visible .p4 { transform: translateZ(270px); transition-delay: .3s; }
+.slide.visible .p5 { transform: translateZ(360px); transition-delay: .4s; }
+.p1 { background: rgba(120,110,120,.25); }
+.p2 { background: rgba(46,196,182,.16); border-color: rgba(46,196,182,.55); }
+.p3 { background: rgba(155,120,255,.20); border-color: rgba(155,120,255,.65); }
+.p4 { background: rgba(79,124,255,.32); border-color: var(--accent);
+  background-image: linear-gradient(rgba(255,255,255,.12) 2px, transparent 2px), linear-gradient(90deg, rgba(255,255,255,.12) 2px, transparent 2px); background-size: 60px 60px; }
+.p5 { background: rgba(255,255,255,.08); border-color: #fff; }
+/* "pulse" mode: layers light up one after another (processing slide) */
+.pulse .plane { animation: glow 6s infinite; }
+.pulse .p1 { animation-delay: 0s } .pulse .p2 { animation-delay: 1s } .pulse .p3 { animation-delay: 2s }
+.pulse .p4 { animation-delay: 3s } .pulse .p5 { animation-delay: 4s }
+@keyframes glow { 0%, 12% { box-shadow: 0 0 120px rgba(79,124,255,.9) inset, 0 0 60px rgba(79,124,255,.6); border-color: #fff; } 22%, 100% { } }
+/* labels attached to the planes */
+.lab { position: absolute; left: 700px; display: flex; align-items: center; gap: 16px; white-space: nowrap; }
+.lab::before { content: ""; width: 60px; height: 2px; background: rgba(255,255,255,.5); }
+.lab b { font-family: var(--font-display); font-weight: 700; font-size: 22px; color: var(--accent); }
+.lab span { font-size: 21px; letter-spacing: .18em; text-transform: uppercase; color: #ECE6EF; }
+.l5 { top: 50px } .l4 { top: 145px } .l3 { top: 240px } .l2 { top: 335px } .l1 { top: 430px }
+
+/* ===========================================
+   SLIDE 1 — TITLE
+   =========================================== */
+.hero { position: absolute; left: 104px; top: 300px; font-family: var(--font-display); font-weight: 800; font-size: 124px; line-height: 1; letter-spacing: -.015em; width: 820px; }
+.hero-sub { position: absolute; left: 110px; top: 700px; width: 700px; }
+
+/* ===========================================
+   SLIDE 2 — SCATTERED INPUTS (floating chips)
+   =========================================== */
+.cloud { position: absolute; left: 860px; top: 230px; width: 960px; height: 700px; }
+.chip { position: absolute; padding: 18px 26px; border-radius: 40px; border: 1.5px solid var(--line); background: var(--glass); backdrop-filter: blur(6px);
+  font-size: 26px; display: flex; align-items: center; gap: 14px; animation: drift 7s ease-in-out infinite; }
+.chip i { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 18px var(--accent); }
+.chip:nth-child(even) i { background: var(--accent-2); box-shadow: 0 0 18px var(--accent-2); }
+.chip:nth-child(2) { animation-delay: -1s } .chip:nth-child(3) { animation-delay: -2s } .chip:nth-child(4) { animation-delay: -3s }
+.chip:nth-child(5) { animation-delay: -4s } .chip:nth-child(6) { animation-delay: -5s } .chip:nth-child(7) { animation-delay: -6s } .chip:nth-child(8) { animation-delay: -2.5s }
+@keyframes drift { 0%, 100% { transform: translate(0, 0) } 50% { transform: translate(10px, -16px) } }
+
+/* ===========================================
+   SLIDE 3 — THREE FAILURE WORDS
+   =========================================== */
+.trio { position: absolute; left: 110px; right: 110px; top: 380px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px; }
+.trio .w { font-family: var(--font-display); font-weight: 800; font-size: 110px; letter-spacing: -.03em; line-height: 1; }
+.trio .w.s1 { color: transparent; -webkit-text-stroke: 2px var(--accent); }
+.trio .w.s2 { color: var(--accent); filter: blur(.4px); text-shadow: 6px 6px 0 rgba(46,196,182,.5); }
+.trio .w.s3 { color: var(--mist); filter: blur(3px); }
+.trio p { margin-top: 30px; font-size: 30px; font-weight: 300; color: var(--mist); line-height: 1.4; max-width: 460px; }
+
+/* ===========================================
+   SLIDE 4 — FLOW: inputs → brain → deliverables
+   =========================================== */
+.col-in, .col-out { position: absolute; top: 330px; display: flex; flex-direction: column; gap: 22px; }
+.col-in { left: 110px; } .col-out { right: 110px; align-items: flex-end; }
+.pill { padding: 16px 28px; border-radius: 40px; border: 1.5px solid var(--line); background: var(--glass); font-size: 25px; }
+.col-out .pill { border-color: rgba(79,124,255,.6); background: rgba(79,124,255,.12); }
+.beam { position: absolute; height: 3px; top: 560px; background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 200% 100%; animation: flowx 2.4s linear infinite; }
+@keyframes flowx { from { background-position: 100% 0 } to { background-position: -100% 0 } }
+
+/* ===========================================
+   SLIDE 5 — LAYER DIAGRAM (rich labels)
+   =========================================== */
+.lab.rich { gap: 22px; }
+.lab.rich .txt { display: flex; flex-direction: column; gap: 6px; }
+.lab.rich .txt span { font-size: 24px; letter-spacing: .12em; }
+.lab.rich .txt small { font-size: 22px; color: var(--ash); letter-spacing: .02em; text-transform: none; }
+.lab .badge { font-family: var(--font-mono); font-size: 16px; padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(79,124,255,.6); color: var(--accent-2); letter-spacing: .06em; }
+
+/* ===========================================
+   SLIDE 6 — PROCESSING STEPS (pins on the stack)
+   =========================================== */
+.steps { position: absolute; left: 110px; top: 330px; display: grid; grid-template-columns: 1fr; gap: 26px; width: 620px; }
+.st { display: flex; align-items: center; gap: 26px; }
+.st b { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-size: 26px; background: rgba(79,124,255,.15); border: 2px solid var(--accent); color: var(--white); }
+.st span { font-size: 32px; font-weight: 600; }
+.st small { font-size: 22px; color: var(--ash); margin-left: auto; font-family: var(--font-mono); }
+.st.det b { background: transparent; border-style: dashed; border-color: var(--accent-2); }
+
+/* ===========================================
+   SLIDE 7 — EVIDENCE BARS
+   =========================================== */
+.bars { position: absolute; left: 110px; top: 330px; width: 1100px; display: flex; flex-direction: column; gap: 22px; }
+.bar { height: 96px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; padding: 0 36px; font-family: var(--font-mono); font-size: 30px;
+  transform-origin: left; transform: scaleX(0); transition: transform 1s var(--ease); }
+.slide.visible .bar { transform: scaleX(1); }
+.bar small { font-family: var(--font-body); font-size: 22px; letter-spacing: .14em; text-transform: uppercase; opacity: .85; }
+.b1 { width: 100%; background: linear-gradient(90deg, #4F7CFF, #7FA0FF); } .b2 { width: 88%; background: linear-gradient(90deg, #7FA0FF, #2EC4B6); color: #1a1208; }
+.b3 { width: 76%; background: rgba(46,196,182,.25); border: 1.5px solid var(--accent-2); } .b4 { width: 64%; background: rgba(255,255,255,.06); border: 1.5px dashed var(--ash); color: var(--mist); }
+.b5 { width: 52%; background: rgba(255,255,255,.04); border: 1.5px dashed rgba(255,255,255,.25); color: var(--ash); }
+.b2 { transition-delay: .1s } .b3 { transition-delay: .2s } .b4 { transition-delay: .3s } .b5 { transition-delay: .4s }
+.verdict { position: absolute; left: 1290px; top: 340px; width: 520px; }
+.verdict .big { font-family: var(--font-display); font-weight: 800; font-size: 64px; line-height: 1.05; }
+
+/* ===========================================
+   SLIDE 8 — RULES AS CODE (four glyph tiles)
+   =========================================== */
+.tiles { position: absolute; left: 110px; right: 110px; top: 420px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 34px; }
+.tile { border-radius: 22px; border: 1.5px solid var(--line); background: var(--glass); padding: 44px 40px; min-height: 360px; position: relative; overflow: hidden; }
+.tile::after { content: ""; position: absolute; width: 260px; height: 260px; right: -90px; bottom: -90px; border-radius: 50%; background: var(--accent); filter: blur(70px); opacity: .25; }
+.tile svg { width: 84px; height: 84px; }
+.tile h3 { font-family: var(--font-display); font-size: 34px; font-weight: 700; margin-top: 36px; }
+.tile p { font-size: 25px; color: var(--mist); margin-top: 14px; line-height: 1.4; font-weight: 300; }
+
+/* ===========================================
+   SLIDE 9 — QUERY PATH (glowing route)
+   =========================================== */
+.route { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.route path { stroke-dasharray: 14 14; animation: dash 1.6s linear infinite; }
+@keyframes dash { to { stroke-dashoffset: -56; } }
+.node { position: absolute; width: 300px; text-align: center; }
+.node .o { width: 130px; height: 130px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, rgba(79,124,255,.55), rgba(79,124,255,.08) 70%); border: 2px solid var(--accent); box-shadow: 0 0 50px rgba(79,124,255,.45); font-family: var(--font-display); font-weight: 800; font-size: 40px; }
+.node h3 { font-family: var(--font-display); font-size: 30px; margin-top: 26px; }
+.node p { font-size: 23px; color: var(--ash); margin-top: 8px; font-family: var(--font-mono); }
+.q-bubble { position: absolute; left: 110px; top: 330px; padding: 24px 34px; border-radius: 28px 28px 28px 6px; background: var(--white); color: var(--night); font-size: 28px; font-weight: 600; }
+.a-bubble { position: absolute; right: 110px; top: 860px; width: 640px; padding: 26px 34px; border-radius: 28px 28px 6px 28px; background: linear-gradient(135deg, var(--accent), var(--accent-soft)); font-size: 25px; line-height: 1.4; }
+.a-bubble code { font-family: var(--font-mono); font-size: 20px; background: rgba(0,0,0,.25); padding: 2px 8px; border-radius: 6px; }
+
+/* ===========================================
+   SLIDE 10 — KNOWLEDGE GRAPH (animated network)
+   =========================================== */
+.net { position: absolute; left: 820px; top: 170px; width: 1000px; height: 820px; }
+.net .e { stroke: rgba(255,255,255,.18); stroke-width: 2.5; }
+.net .e.hot { stroke: var(--accent); stroke-width: 3; stroke-dasharray: 10 10; animation: dash 1.4s linear infinite; }
+.net circle { transition: r .4s; }
+.net .n-core { animation: breathe 3s ease-in-out infinite; }
+@keyframes breathe { 50% { filter: drop-shadow(0 0 30px rgba(79,124,255,.9)); } }
+.net text { font-family: var(--font-body); font-weight: 600; font-size: 22px; fill: #fff; text-anchor: middle; }
+.facts { position: absolute; left: 110px; top: 400px; width: 640px; display: flex; flex-direction: column; gap: 40px; }
+.fact b { display: block; font-family: var(--font-display); font-size: 40px; font-weight: 700; }
+.fact span { font-size: 26px; color: var(--mist); font-weight: 300; }
+
+/* ===========================================
+   SLIDE 11 — DELIVERABLES OUT OF THE STACK
+   =========================================== */
+.outs { position: absolute; left: 980px; top: 270px; display: grid; grid-template-columns: repeat(2, 400px); gap: 22px 26px; }
+.out { display: flex; align-items: center; gap: 20px; padding: 24px 28px; border-radius: 18px; border: 1.5px solid rgba(79,124,255,.45); background: rgba(79,124,255,.08); font-size: 27px; font-weight: 600; }
+.out svg { width: 46px; height: 46px; flex: none; }
+
+/* ===========================================
+   SLIDE 12 — COMMANDS (terminal chips)
+   =========================================== */
+.cmds { position: absolute; left: 110px; right: 110px; top: 380px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+.cmd { border-radius: 20px; background: var(--night-2); border: 1.5px solid var(--line); padding: 34px 36px; }
+.cmd code { font-family: var(--font-mono); font-size: 36px; color: var(--accent); }
+.cmd code::before { content: "› "; color: var(--ash); }
+.cmd p { font-size: 26px; color: var(--mist); margin-top: 16px; font-weight: 300; line-height: 1.35; }
+
+/* ===========================================
+   SLIDE 13 — UPDATE LOOP (ring)
+   =========================================== */
+.ring { position: absolute; left: 960px; top: 180px; width: 820px; height: 820px; }
+.ring .track { fill: none; stroke: rgba(255,255,255,.12); stroke-width: 3; }
+.ring .spin { fill: none; stroke: var(--accent); stroke-width: 4; stroke-dasharray: 120 2400; stroke-linecap: round; transform-origin: 410px 410px; animation: spin 6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.rn { position: absolute; width: 230px; text-align: center; }
+.rn b { display: block; width: 92px; height: 92px; margin: 0 auto; border-radius: 50%; background: var(--night-2); border: 2px solid var(--accent); display: grid; place-items: center; font-family: var(--font-display); font-size: 28px; }
+.rn span { display: block; margin-top: 14px; font-size: 27px; font-weight: 600; }
+.rn small { display: block; font-size: 20px; color: var(--ash); margin-top: 4px; }
+.rn.hl b { background: var(--accent); box-shadow: 0 0 40px rgba(79,124,255,.7); }
+
+/* ===========================================
+   SLIDE 14 — LESSONS (big statements)
+   =========================================== */
+.lessons { position: absolute; left: 110px; right: 110px; top: 360px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 60px 90px; }
+.lesson { border-left: 4px solid var(--accent); padding-left: 34px; }
+.lesson b { display: block; font-family: var(--font-display); font-size: 42px; font-weight: 700; line-height: 1.12; }
+.lesson span { display: block; font-size: 25px; color: var(--ash); margin-top: 14px; font-weight: 300; }
+
+/* ===========================================
+   SLIDE 15 — VALUE (icon grid)
+   =========================================== */
+.vals { position: absolute; left: 110px; right: 110px; top: 400px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 50px 60px; }
+.val { display: flex; gap: 26px; align-items: flex-start; }
+.val svg { width: 70px; height: 70px; flex: none; }
+.val b { display: block; font-family: var(--font-display); font-size: 32px; font-weight: 700; }
+.val span { display: block; font-size: 24px; color: var(--ash); margin-top: 8px; font-weight: 300; }
+
+/* ===========================================
+   SLIDE 16 — CLOSING
+   =========================================== */
+.close-h { position: absolute; left: 104px; top: 330px; width: 880px; font-family: var(--font-display); font-weight: 800; font-size: 74px; line-height: 1.08; letter-spacing: -.01em; }
+
+/* ===========================================
+   DECK CHROME — progress bar + counter
+   =========================================== */
+.progress { position: fixed; left: 0; top: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); z-index: 1001; transition: width .4s var(--ease); }
+.counter { font-family: var(--font-mono); font-size: 13px; color: #aaa; background: rgba(0,0,0,.45); padding: 6px 12px; border-radius: 20px; }
+
+/* ===========================================
+   INLINE EDITING (E key or top-left hotzone; Ctrl+S downloads)
+   =========================================== */
+.edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+.edit-toggle { position: fixed; top: 16px; left: 16px; z-index: 10001; opacity: 0; pointer-events: none; transition: opacity .3s ease; border: 0; border-radius: 6px; padding: 8px 12px; background: var(--accent); color: #fff; font: 600 14px var(--font-body); cursor: pointer; }
+.edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+body.editing [contenteditable="true"] { outline: 2px dashed rgba(79,124,255,.6); outline-offset: 4px; }
+
+/* ===========================================
+   IN PRACTICE — overview grid + use-case slides (input · behind the scenes · output)
+   =========================================== */
+.ucgrid { position: absolute; left: 110px; right: 110px; top: 360px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 26px; }
+.ucc { border-radius: 22px; border: 1.5px solid var(--line); background: var(--glass); padding: 40px 36px 44px; min-height: 420px; display: flex; flex-direction: column; }
+.ucn { font-family: var(--font-display); font-weight: 800; font-size: 56px; color: var(--accent); }
+.ucin { font-size: 26px; color: var(--mist); margin-top: 30px; line-height: 1.3; min-height: 74px; }
+.ucarrow { font-size: 44px; color: var(--accent-2); margin: 18px 0; }
+.ucout { font-family: var(--font-display); font-weight: 700; font-size: 29px; line-height: 1.2; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ucol { position: absolute; top: 330px; }
+.ucol.u-in { left: 110px; width: 430px; }
+.ucol.u-mid { left: 620px; width: 680px; }
+.ucol.u-out { left: 1370px; width: 440px; }
+.ucol.u-mid::before, .ucol.u-out::before { content: "→"; position: absolute; left: -58px; top: 260px; font-size: 52px; color: var(--accent); text-shadow: 0 0 20px rgba(79,124,255,.7); }
+.uhead { font-family: var(--font-mono); font-size: 18px; letter-spacing: .2em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 18px; }
+.file { display: flex; align-items: center; gap: 16px; padding: 16px 20px; margin-bottom: 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--glass); font-size: 24px; }
+.file i { font-style: normal; font-family: var(--font-mono); font-size: 15px; padding: 5px 9px; border-radius: 6px; background: rgba(79,124,255,.18); color: var(--accent-2); border: 1px solid rgba(79,124,255,.5); }
+.ask { padding: 22px 26px; border-radius: 24px 24px 24px 6px; background: var(--white); color: var(--night); font-size: 25px; font-weight: 600; line-height: 1.35; }
+.mini.stackbox { left: 430px; top: 60px; transform: scale(.32); transform-origin: left top; }
+.bts { list-style: none; width: 430px; display: flex; flex-direction: column; gap: 16px; }
+.bts li { display: flex; gap: 10px; align-items: flex-start; font-size: 23px; line-height: 1.35; color: var(--mist); }
+.bts .ly { flex: none; font-family: var(--font-mono); font-size: 16px; padding: 4px 9px; border-radius: 6px; border: 1.5px solid var(--accent); color: var(--white); background: rgba(79,124,255,.2); margin-top: 2px; }
+.bts code { font-family: var(--font-mono); font-size: 18px; color: var(--accent-2); }
+.doc { border-radius: 20px; background: var(--night-2); border: 1.5px solid rgba(79,124,255,.55); box-shadow: 0 0 60px rgba(79,124,255,.18); padding: 30px 30px 26px; }
+.dt { font-family: var(--font-display); font-weight: 700; font-size: 26px; padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.dl { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px dashed rgba(255,255,255,.1); font-size: 21px; color: #ECE6EF; }
+.dl.chg { background: rgba(79,124,255,.12); margin: 0 -14px; padding: 12px 14px; border-radius: 8px; }
+.ev { font-style: normal; font-family: var(--font-mono); font-size: 15px; flex: none; white-space: nowrap; padding: 3px 9px; border-radius: 5px; }
+.ev.v { background: var(--accent); color: #fff; } .ev.p { background: var(--accent-2); color: #1a1208; }
+.ev.q { border: 1px solid rgba(255,255,255,.4); color: #fff; } .ev.o { border: 1px dashed var(--accent); color: var(--accent-soft); }
+.ev.a { border: 1px dashed var(--ash); color: var(--ash); } .ev.b { border: 1px solid var(--accent-2); color: var(--accent-2); }
+.dfoot { margin-top: 16px; font-size: 18px; color: var(--ash); font-family: var(--font-mono); }
+
+/* ===========================================
+   WHO-DOES-IT BADGES — CODE (deterministic) vs AI (judgment)
+   =========================================== */
+.who { display: inline-block; font-style: normal; font-family: var(--font-mono); font-size: 15px; letter-spacing: .06em; padding: 4px 9px; border-radius: 6px; white-space: nowrap; flex: none; }
+.who.c { border: 1.5px solid var(--accent-2); color: var(--accent-2); }
+.who.a { background: var(--accent); color: #fff; border: 1.5px solid var(--accent); }
+.who.ac { border: 1.5px solid var(--accent); color: #fff; background: linear-gradient(90deg, rgba(79,124,255,.55), rgba(46,196,182,.15)); }
+.st .who { margin-left: auto; }
+.node .who { margin-top: 12px; }
+.bts .who { margin-top: 2px; }
+.legend { position: absolute; display: flex; gap: 26px; align-items: center; font-size: 22px; color: var(--mist); }
+.legend span { display: flex; gap: 10px; align-items: center; }
+
+/* ===========================================
+   SLIDE — START + GAP (merged)
+   =========================================== */
+.cloud.sm { top: 150px; height: 420px; }
+.trio.sm { top: 700px; gap: 50px; }
+.trio.sm .w { font-size: 76px; }
+.trio.sm p { font-size: 25px; margin-top: 16px; }
+
+/* ===========================================
+   SLIDE — PERSONAS
+   =========================================== */
+.pers { position: absolute; left: 110px; right: 110px; top: 330px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; }
+.per { border-radius: 22px; border: 1.5px solid var(--line); background: var(--glass); padding: 34px 30px 30px; min-height: 520px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.per::after { content: ""; position: absolute; width: 220px; height: 220px; right: -90px; top: -90px; border-radius: 50%; background: var(--accent); filter: blur(70px); opacity: .22; }
+.per svg { width: 58px; height: 58px; }
+.per h3 { font-family: var(--font-display); font-size: 29px; font-weight: 700; margin-top: 22px; line-height: 1.15; min-height: 68px; }
+.per p { font-size: 22px; color: var(--mist); line-height: 1.4; font-weight: 300; margin-top: 12px; flex: 1; }
+.per .cmdl { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.per .cmdl code { font-family: var(--font-mono); font-size: 17px; padding: 5px 10px; border-radius: 6px; background: var(--night-2); border: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+.tier { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.tier.m { background: var(--accent); box-shadow: 0 0 10px var(--accent); } .tier.d { background: var(--accent-2); } .tier.s { background: var(--ash); }
+
+/* ===========================================
+   SLIDE — DELIVERABLE STRIP (overview)
+   =========================================== */
+.dstrip { position: absolute; left: 110px; right: 110px; top: 880px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.dstrip b { font-family: var(--font-mono); font-size: 18px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent-2); margin-right: 10px; }
+.dstrip span { padding: 10px 18px; border-radius: 30px; border: 1.5px solid rgba(79,124,255,.45); background: rgba(79,124,255,.08); font-size: 21px; }
+
+/* ===========================================
+   SLIDE — SENSITIVE DATA
+   =========================================== */
+.sec { position: absolute; top: 330px; width: 800px; border-radius: 22px; padding: 40px 44px; }
+.sec.l { left: 110px; border: 1.5px solid rgba(79,124,255,.55); background: rgba(79,124,255,.07); }
+.sec.r { right: 110px; border: 1.5px dashed var(--line); background: var(--glass); }
+.sec h3 { font-family: var(--font-display); font-size: 32px; font-weight: 700; display: flex; align-items: center; gap: 16px; }
+.sec h3 svg { width: 44px; height: 44px; }
+.sec ul { list-style: none; margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }
+.sec li { font-size: 25px; line-height: 1.35; padding-left: 34px; position: relative; color: #ECE6EF; }
+.sec li::before { content: ""; position: absolute; left: 0; top: 12px; width: 16px; height: 16px; border-radius: 4px; border: 2px solid var(--accent); }
+.sec.l li::before { background: var(--accent); }
+</style>
+</head>
+<body>
+<div class="edit-hotzone"></div>
+<button class="edit-toggle" id="editToggle" title="Edit mode (E) — Ctrl+S saves">Edit</button>
+<div class="progress" id="progress"></div>
+
+<!-- Reusable stack markup is repeated per slide (plain HTML keeps the file dependency-free) -->
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- ================= 1. TITLE ================= -->
+<section class="slide active">
+  <div class="kick rv t1">Structured AI for complex delivery</div>
+  <h1 class="hero rv t2">The Project <em>Second Brain</em></h1>
+  <p class="hero-sub line rv t3">Complexity, organised in layers. Encoded with evidence and rules. Worked on by agents.</p>
+  <div class="stackbox" style="left:860px;top:250px">
+    <div class="scene"><div class="stack"><div class="plane p1"></div><div class="plane p2"></div><div class="plane p3"></div><div class="plane p4"></div><div class="plane p5"></div></div></div>
+    <div class="lab l5 rv t6"><b>05</b><span>Workspace</span></div>
+    <div class="lab l4 rv t6"><b>04</b><span>Index &amp; graph</span></div>
+    <div class="lab l3 rv t7"><b>03</b><span>Curated</span></div>
+    <div class="lab l2 rv t7"><b>02</b><span>Extracted</span></div>
+    <div class="lab l1 rv t8"><b>01</b><span>Sources</span></div>
+  </div>
+</section>
+
+<!-- ================= 2. WHERE IT STARTS + THE GAP ================= -->
+<section class="slide" style="--gx:1350px;--gy:420px">
+  <div class="kick rv t1">Where it starts</div>
+  <h2 class="title rv t2" style="max-width:700px;top:150px">Knowledge that is <em>large, scattered, uneven.</em></h2>
+  <div class="cloud sm rv t3">
+    <div class="chip" style="left:60px;top:20px"><i></i>Specifications</div>
+    <div class="chip" style="left:470px;top:0"><i></i>Workshop transcripts</div>
+    <div class="chip" style="left:200px;top:120px"><i></i>Mails &amp; chats</div>
+    <div class="chip" style="left:600px;top:130px"><i></i>Spreadsheets</div>
+    <div class="chip" style="left:20px;top:230px"><i></i>Diagrams</div>
+    <div class="chip" style="left:380px;top:250px"><i></i>Data &amp; code</div>
+    <div class="chip" style="left:120px;top:350px"><i></i>Earlier AI drafts</div>
+    <div class="chip" style="left:560px;top:360px"><i></i>Unwritten decisions</div>
+  </div>
+  <p class="line rv t4" style="position:absolute;left:110px;top:620px;width:1500px">A generic assistant pointed at all this fails in three ways:</p>
+  <div class="trio sm">
+    <div class="rv t5"><div class="w s1">Lost</div><p>Tables and diagrams vanish in truncation.</p></div>
+    <div class="rv t6"><div class="w s2">Invented</div><p>Numbers guessed by reading, not computed.</p></div>
+    <div class="rv t7"><div class="w s3">Blurred</div><p>Facts, plans and hypotheses merge.</p></div>
+  </div>
+  <div class="brand">Project Second Brain</div><div class="pg">02</div>
+</section>
+
+<!-- ================= 4. THE APPROACH (flow) ================= -->
+<section class="slide" style="--gx:960px;--gy:560px">
+  <div class="kick rv t1">The approach</div>
+  <h2 class="title rv t2" style="max-width:1700px">One repository the agent <em>reads and writes.</em></h2>
+  <div class="col-in">
+    <div class="pill rv t3">Documents</div><div class="pill rv t3">Conversations</div><div class="pill rv t4">Data</div><div class="pill rv t4">Code</div><div class="pill rv t5">Earlier AI work</div>
+  </div>
+  <div class="beam" style="left:420px;width:200px"></div>
+  <div class="stackbox rv t3" style="left:580px;top:300px;transform:scale(.82);transform-origin:center"><div class="scene"><div class="stack"><div class="plane p1"></div><div class="plane p2"></div><div class="plane p3"></div><div class="plane p4"></div><div class="plane p5"></div></div></div></div>
+  <div class="beam" style="left:1320px;width:220px"></div>
+  <div class="col-out">
+    <div class="pill rv t6">Answers, cited</div><div class="pill rv t6">Designs</div><div class="pill rv t7">Plans</div><div class="pill rv t7">Decisions</div><div class="pill rv t8">Briefings</div>
+  </div>
+  <div class="brand">Project Second Brain</div><div class="pg">03</div>
+</section>
+
+<!-- ================= 5. THE LAYERS (diagram) ================= -->
+<section class="slide" style="--gx:700px;--gy:600px">
+  <div class="kick rv t1">Layering</div>
+  <h2 class="title rv t2" style="font-size:64px">Five layers. One job each.</h2>
+  <div class="stackbox" style="left:120px;top:330px">
+    <div class="scene"><div class="stack"><div class="plane p1"></div><div class="plane p2"></div><div class="plane p3"></div><div class="plane p4"></div><div class="plane p5"></div></div></div>
+    <div class="lab rich l5 rv t5"><b>05</b><div class="txt"><span>Workspace</span><small>analysis · design · decisions · plans</small></div><div class="badge">as-is ≠ to-be</div></div>
+    <div class="lab rich l4 rv t6"><b>04</b><div class="txt"><span>Index &amp; graph</span><small>SQL tables · catalogue · section map · graph</small></div><div class="badge">numbers = queries</div></div>
+    <div class="lab rich l3 rv t7"><b>03</b><div class="txt"><span>Curated</span><small>syntheses · dictionaries · diagrams</small></div><div class="badge">reviewed</div></div>
+    <div class="lab rich l2 rv t8"><b>02</b><div class="txt"><span>Extracted</span><small>structured text, tables preserved</small></div><div class="badge">locked</div></div>
+    <div class="lab rich l1 rv t9"><b>01</b><div class="txt"><span>Sources</span><small>every file exactly as received</small></div><div class="badge">immutable</div></div>
+  </div>
+  <div class="brand">Project Second Brain</div><div class="pg">04</div>
+</section>
+
+<!-- ================= 6. PROCESSING ================= -->
+<section class="slide pulse" style="--gx:1350px;--gy:560px">
+  <div class="kick rv t1">Knowledge processing</div>
+  <h2 class="title rv t2" style="font-size:64px">From raw file to usable knowledge.</h2>
+  <div class="steps">
+    <div class="st rv t3"><b>1</b><span>Triage</span><em class="who ac">AI + CODE</em></div>
+    <div class="st det rv t4"><b>2</b><span>Extract</span><em class="who c">CODE</em></div>
+    <div class="st det rv t5"><b>3</b><span>Load</span><em class="who c">CODE</em></div>
+    <div class="st rv t6"><b>4</b><span>Grade</span><em class="who a">AI</em></div>
+    <div class="st det rv t7"><b>5</b><span>Index</span><em class="who c">CODE</em></div>
+    <div class="st rv t8"><b>6</b><span>Register</span><em class="who ac">AI + CODE</em></div>
+  </div>
+  <div class="stackbox" style="left:820px;top:330px">
+    <div class="scene"><div class="stack"><div class="plane p1"></div><div class="plane p2"></div><div class="plane p3"></div><div class="plane p4"></div><div class="plane p5"></div></div></div>
+    <div class="lab l5 rv t8"><b>6</b><span>Register</span></div>
+    <div class="lab l4 rv t7"><b>3·5</b><span>Load · Index</span></div>
+    <div class="lab l3 rv t6"><b>4</b><span>Grade</span></div>
+    <div class="lab l2 rv t5"><b>2</b><span>Extract</span></div>
+    <div class="lab l1 rv t4"><b>1</b><span>Triage</span></div>
+  </div>
+  <p class="line rv t9" style="position:absolute;left:110px;top:880px;font-size:25px;width:1700px">Code where the answer is computable. AI where it needs judgment. Every change is a versioned commit.</p>
+  <div class="pg">05</div>
+</section>
+
+<!-- ================= 7. EVIDENCE ================= -->
+<section class="slide" style="--gx:1500px;--gy:500px">
+  <div class="kick rv t1">Trust model</div>
+  <h2 class="title rv t2" style="font-size:64px">Every statement carries its <em>evidence.</em></h2>
+  <div class="bars">
+    <div class="bar b1">verified<small>fact</small></div>
+    <div class="bar b2">primary-doc<small>fact + citation</small></div>
+    <div class="bar b3">verbal<small>attributed</small></div>
+    <div class="bar b4">derived-llm<small>hypothesis</small></div>
+    <div class="bar b5">assumed<small>labelled</small></div>
+  </div>
+  <div class="verdict rv t6"><div class="big">Hypotheses never become <em>facts</em> silently.</div><p class="line" style="margin-top:26px;font-size:26px">Every assumption a design depends on is a numbered claim, visible in the deliverable.</p></div>
+  <div class="brand">Project Second Brain</div><div class="pg">06</div>
+</section>
+
+<!-- ================= 8. RULES AS CODE ================= -->
+<section class="slide" style="--gx:960px;--gy:900px">
+  <div class="kick rv t1">Governance</div>
+  <h2 class="title rv t2">Rules live in <em>code</em>, not in prompts.</h2>
+  <div class="tiles">
+    <div class="tile rv t3"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><rect x="10" y="8" width="44" height="48" rx="6"/><path d="M20 22h24M20 32h24M20 42h14"/></svg><h3>Schema</h3><p>One vocabulary, one folder contract.</p></div>
+    <div class="tile rv t4"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><path d="M32 6l20 8v16c0 13-9 22-20 28C21 52 12 43 12 30V14z"/><path d="M24 32l6 6 12-12"/></svg><h3>Guards</h3><p>Originals and locked records can't be edited.</p></div>
+    <div class="tile rv t5"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><circle cx="28" cy="28" r="16"/><path d="M40 40l14 14"/><path d="M21 28l5 5 9-9"/></svg><h3>Linter</h3><p>Every file checked the moment it is written.</p></div>
+    <div class="tile rv t6"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><path d="M50 22a20 20 0 1 0 2 16"/><path d="M52 10v12H40"/></svg><h3>Generated</h3><p>Indexes and registers rebuilt, never hand-kept.</p></div>
+  </div>
+  <p class="line rv t7" style="position:absolute;left:110px;top:840px;font-size:27px">Enforced the moment a file is written: <em style="font-style:normal;color:var(--accent-2)">no model involved, no tokens spent.</em></p>
+  <div class="brand">Project Second Brain</div><div class="pg">07</div>
+</section>
+
+<!-- ================= 9. HOW IT IS QUERIED ================= -->
+<section class="slide" style="--gx:960px;--gy:560px">
+  <div class="kick rv t1">How it is queried</div>
+  <h2 class="title rv t2" style="font-size:64px">Cheapest path first.</h2>
+  <div class="q-bubble rv t3">“What depends on this object?”</div>
+  <svg class="route rv t4" viewBox="0 0 1920 1080" fill="none"><path d="M330 420 C 420 560, 300 620, 300 640 L 1620 640" stroke="#4F7CFF" stroke-width="3"/></svg>
+  <div class="node rv t4" style="left:150px;top:575px"><div class="o">1</div><h3>Graph</h3><p>one call</p><em class="who c">CODE</em></div>
+  <div class="node rv t5" style="left:560px;top:575px"><div class="o">2</div><h3>SQL</h3><p>no eyeballing</p><em class="who c">CODE</em></div>
+  <div class="node rv t6" style="left:970px;top:575px"><div class="o">3</div><h3>Lines</h3><p>not documents</p><em class="who ac">CODE → AI</em></div>
+  <div class="node rv t7" style="left:1380px;top:575px"><div class="o">4</div><h3>Cite</h3><p>or open a point</p><em class="who a">AI</em></div>
+  <p class="line rv t8" style="position:absolute;left:110px;top:900px;font-size:26px;width:900px">The model reads only what the code points it to.</p>
+  <div class="a-bubble rv t8">Short answer, every fact cited <code>doc §3 · L120-180 · verified</code></div>
+  <div class="brand">Project Second Brain</div><div class="pg">08</div>
+</section>
+
+<!-- ================= 10. KNOWLEDGE GRAPH ================= -->
+<section class="slide" style="--gx:1320px;--gy:580px">
+  <div class="kick rv t1">Knowledge graph</div>
+  <h2 class="title rv t2" style="font-size:64px;max-width:760px">Links from structure, not guesses.</h2>
+  <div class="facts">
+    <div class="fact rv t3"><b>Everything connected</b><span>documents, objects, decisions, assumptions</span></div>
+    <div class="fact rv t4"><b>Impact in one step</b><span>an assumption breaks → affected plans listed</span></div>
+    <div class="fact rv t5"><b>Built by code, not by AI</b><span>exact matches, no embeddings, rebuilt in seconds</span></div>
+    <div class="fact rv t6" style="opacity:.75"><span>Only as good as its entity dictionary, which grows as the corpus does.</span></div>
+  </div>
+  <svg class="net rv t4" viewBox="0 0 1000 820">
+    <line class="e" x1="500" y1="410" x2="250" y2="180"/><line class="e" x1="500" y1="410" x2="760" y2="160"/>
+    <line class="e" x1="500" y1="410" x2="860" y2="440"/><line class="e hot" x1="500" y1="410" x2="700" y2="690"/>
+    <line class="e" x1="500" y1="410" x2="270" y2="660"/><line class="e" x1="500" y1="410" x2="130" y2="420"/>
+    <line class="e" x1="250" y1="180" x2="130" y2="420"/><line class="e" x1="760" y1="160" x2="860" y2="440"/>
+    <line class="e hot" x1="700" y1="690" x2="860" y2="440"/><line class="e" x1="270" y1="660" x2="130" y2="420"/>
+    <line class="e" x1="250" y1="180" x2="500" y2="60"/><line class="e" x1="760" y1="160" x2="500" y2="60"/>
+    <circle class="n-core" cx="500" cy="410" r="100" fill="#4F7CFF"/><text x="500" y="405">System</text><text x="500" y="433">object</text>
+    <circle cx="250" cy="180" r="62" fill="#2A2630" stroke="#2EC4B6" stroke-width="2"/><text x="250" y="188">Spec</text>
+    <circle cx="760" cy="160" r="62" fill="#2A2630" stroke="#2EC4B6" stroke-width="2"/><text x="760" y="168">Process</text>
+    <circle cx="500" cy="60" r="44" fill="#2A2630" stroke="#8E8794" stroke-width="2"/><text x="500" y="67" style="font-size:18px">Mail</text>
+    <circle cx="860" cy="440" r="66" fill="#2EC4B6"/><text x="860" y="448" style="fill:#1a1208">Plan</text>
+    <circle cx="700" cy="690" r="66" fill="#0E0D12" stroke="#4F7CFF" stroke-width="3"/><text x="700" y="683">Assum-</text><text x="700" y="709">ption</text>
+    <circle cx="270" cy="660" r="62" fill="#0E0D12" stroke="#8E8794" stroke-width="2"/><text x="270" y="653">Open</text><text x="270" y="679">point</text>
+    <circle cx="130" cy="420" r="62" fill="#2A2630" stroke="#2EC4B6" stroke-width="2"/><text x="130" y="428">Decision</text>
+  </svg>
+  <div class="brand">Project Second Brain</div><div class="pg">09</div>
+</section>
+
+<!-- ================= PERSONAS ================= -->
+<section class="slide" style="--gx:960px;--gy:760px">
+  <div class="kick rv t1">Who uses it</div>
+  <h2 class="title rv t2" style="font-size:64px">Five roles, <em>one shared brain.</em></h2>
+  <div class="pers">
+    <div class="per rv t3"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><path d="M10 50l14-14 10 10 20-24"/><path d="M42 22h12v12"/></svg><h3>Delivery lead</h3><p>Status, risks and owners at a glance; plans regenerated, not rewritten.</p><div class="cmdl"><code><i class="tier s"></i>status</code><code><i class="tier m"></i>ask</code><code><i class="tier s"></i>capture</code></div></div>
+    <div class="per rv t4"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><rect x="8" y="8" width="48" height="48" rx="5"/><path d="M8 24h48M24 24v32"/></svg><h3>Solution &amp; data architect</h3><p>As-is and to-be blueprints, decisions and their impact, all traceable.</p><div class="cmdl"><code><i class="tier m"></i>ask</code><code><i class="tier s"></i>impact</code><code><i class="tier s"></i>capture</code></div></div>
+    <div class="per rv t5"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><rect x="10" y="14" width="44" height="34" rx="4"/><path d="M10 18l22 16 22-16"/></svg><h3>Business &amp; functional analyst</h3><p>Turns workshops, mails and specs into structured knowledge and open points.</p><div class="cmdl"><code><i class="tier d"></i>ingest</code><code><i class="tier m"></i>ask</code></div></div>
+    <div class="per rv t6"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><path d="M22 18L8 32l14 14M42 18l14 14-14 14M36 12l-8 40"/></svg><h3>Tech lead &amp; developers</h3><p>Mappings, rules and lineage with their source, ready to build on.</p><div class="cmdl"><code><i class="tier m"></i>ask</code></div></div>
+    <div class="per rv t7"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><path d="M32 6l20 8v16c0 13-9 22-20 28C21 52 12 43 12 30V14z"/><path d="M24 32l6 6 12-12"/></svg><h3>Knowledge steward</h3><p>Keeps the brain healthy: reviews, registers, vocabulary. Part-time, often the architect.</p><div class="cmdl"><code><i class="tier d"></i>review</code><code><i class="tier s"></i>status</code></div></div>
+  </div>
+  <div class="legend rv t8" style="left:110px;top:900px"><span><i class="tier m"></i>main model</span><span><i class="tier d"></i>mid-size model</span><span><i class="tier s"></i>small model: mechanical work</span><span style="color:var(--ash)">· Stakeholders receive the deliverables, not the brain.</span></div>
+  <div class="brand">Project Second Brain</div><div class="pg">10</div>
+</section>
+
+<!-- ================= IN PRACTICE — OVERVIEW ================= -->
+<section class="slide" style="--gx:960px;--gy:640px">
+  <div class="kick rv t1">In practice</div>
+  <h2 class="title rv t2">You add something. You ask. <em>The brain does the rest.</em></h2>
+  <div class="ucgrid">
+    <div class="ucc rv t3"><div class="ucn">01</div><div class="ucin">Functional &amp; technical docs</div><div class="ucarrow">↓</div><div class="ucout">As-is solution blueprint</div></div>
+    <div class="ucc rv t4"><div class="ucn">02</div><div class="ucin">Workshop &amp; meeting notes</div><div class="ucarrow">↓</div><div class="ucout">Updated to-be architecture</div></div>
+    <div class="ucc rv t5"><div class="ucn">03</div><div class="ucin">A written answer</div><div class="ucarrow">↓</div><div class="ucout">Open points closed, follow-up drafted</div></div>
+    <div class="ucc rv t6"><div class="ucn">04</div><div class="ucin">What we already know</div><div class="ucarrow">↓</div><div class="ucout">Delivery plan &amp; WBS</div></div>
+    <div class="ucc rv t7"><div class="ucn">05</div><div class="ucin">A fact that contradicts</div><div class="ucarrow">↓</div><div class="ucout">What must be revised</div></div>
+  </div>
+  <div class="dstrip rv t8"><b>It produces</b><span>Lineage maps</span><span>Blueprints</span><span>Mapping matrices</span><span>Plans &amp; WBS</span><span>Decision records</span><span>Registers</span><span>Briefings &amp; decks</span><span>Communications</span></div>
+  <div class="brand">Project Second Brain</div><div class="pg">11</div>
+</section>
+
+<!-- ================= USE CASE 1 — AS-IS BLUEPRINT ================= -->
+<section class="slide uc pulse" style="--gx:960px;--gy:600px">
+  <div class="kick rv t1">Use case 01 · Understand what exists</div>
+  <h2 class="title rv t2" style="font-size:58px">From existing documentation to an <em>as-is blueprint.</em></h2>
+  <div class="ucol u-in">
+    <div class="uhead rv t3">You add</div>
+    <div class="file rv t3"><i>DOCX</i>Functional specification</div>
+    <div class="file rv t3"><i>PDF</i>Technical design</div>
+    <div class="file rv t4"><i>XLSX</i>Object &amp; interface inventory</div>
+    <div class="uhead rv t4" style="margin-top:34px">You ask</div>
+    <div class="ask rv t5">“Summarise the current solution as a blueprint.”</div>
+  </div>
+  <div class="ucol u-mid">
+    <div class="uhead rv t3">Behind the scenes</div>
+    <div class="mini stackbox"><div class="scene"><div class="stack"><div class="plane p1"></div><div class="plane p2"></div><div class="plane p3"></div><div class="plane p4"></div><div class="plane p5"></div></div></div></div>
+    <ol class="bts">
+      <li class="rv t4"><span class="ly">L1</span><em class="who c">CODE</em><span>Files stored as received, logged in the manifest</span></li>
+      <li class="rv t5"><span class="ly">L2</span><em class="who c">CODE</em><span>Specs converted with tables intact; inventory loaded into SQL</span></li>
+      <li class="rv t6"><span class="ly">L2</span><em class="who a">AI</em><span>Each note graded <code>primary-doc</code>, extraction checked</span></li>
+      <li class="rv t7"><span class="ly">L4</span><em class="who c">CODE</em><span>Components, flows and interfaces linked in the graph</span></li>
+      <li class="rv t8"><span class="ly">L5</span><em class="who ac">AI + CODE</em><span>Every statement registered with its evidence; gaps become open points</span></li>
+    </ol>
+  </div>
+  <div class="ucol u-out">
+    <div class="uhead rv t3">You get</div>
+    <div class="doc rv t6">
+      <div class="dt">As-is blueprint</div>
+      <div class="dl"><span>Sources → staging → reporting</span><em class="ev v">verified</em></div>
+      <div class="dl"><span>Interface A: daily file feed</span><em class="ev p">spec §4.2</em></div>
+      <div class="dl"><span>14 components, 31 flows</span><em class="ev q">SQL</em></div>
+      <div class="dl"><span>Reject rule undocumented</span><em class="ev o">OP-014</em></div>
+      <div class="dl"><span>Run schedule inferred</span><em class="ev a">C-021 · assumed</em></div>
+      <div class="dfoot">Every box cited · every gap listed</div>
+    </div>
+  </div>
+  <div class="brand">Project Second Brain</div><div class="pg">12</div>
+</section>
+
+<!-- ================= USE CASE 2 — TO-BE UPDATE FROM MEETINGS ================= -->
+<section class="slide uc pulse" style="--gx:960px;--gy:600px">
+  <div class="kick rv t1">Use case 02 · Keep the design current</div>
+  <h2 class="title rv t2" style="font-size:58px">From meeting notes to an <em>updated to-be architecture.</em></h2>
+  <div class="ucol u-in">
+    <div class="uhead rv t3">You add</div>
+    <div class="file rv t3"><i>TXT</i>Workshop transcript</div>
+    <div class="file rv t4"><i>MD</i>Meeting notes on solution scope</div>
+    <div class="uhead rv t4" style="margin-top:34px">You ask</div>
+    <div class="ask rv t5">“Update the target architecture with what was agreed.”</div>
+  </div>
+  <div class="ucol u-mid">
+    <div class="uhead rv t3">Behind the scenes</div>
+    <div class="mini stackbox"><div class="scene"><div class="stack"><div class="plane p1"></div><div class="plane p2"></div><div class="plane p3"></div><div class="plane p4"></div><div class="plane p5"></div></div></div></div>
+    <ol class="bts">
+      <li class="rv t4"><span class="ly">L2</span><em class="who c">CODE</em><span>Stored as <code>verbal</code> evidence, attributed and dated</span></li>
+      <li class="rv t5"><span class="ly">L3</span><em class="who a">AI</em><span>Decisions and constraints distilled into a curated summary</span></li>
+      <li class="rv t6"><span class="ly">L5</span><em class="who a">AI</em><span>Delta: confirms D-012, contradicts assumption C-007</span></li>
+      <li class="rv t7"><span class="ly">L4</span><em class="who c">CODE</em><span>Graph lists the design sections and plans that depend on C-007</span></li>
+      <li class="rv t8"><span class="ly">L5</span><em class="who a">AI</em><span>Changes proposed for review, new decision record drafted</span></li>
+    </ol>
+  </div>
+  <div class="ucol u-out">
+    <div class="uhead rv t3">You get</div>
+    <div class="doc rv t6">
+      <div class="dt">To-be architecture · next revision</div>
+      <div class="dl chg"><span>Integration pattern changed</span><em class="ev b">verbal · 22 Sep</em></div>
+      <div class="dl"><span>New decision record</span><em class="ev q">ADR proposed</em></div>
+      <div class="dl"><span>C-007 contradicted</span><em class="ev o">2 plans to review</em></div>
+      <div class="dl"><span>Retention still open</span><em class="ev o">OP-031</em></div>
+      <div class="dfoot">Only what changed · why · who said it</div>
+    </div>
+  </div>
+  <div class="brand">Project Second Brain</div><div class="pg">13</div>
+</section>
+
+<!-- ================= USE CASE 3 — WRITTEN ANSWER ================= -->
+<section class="slide uc pulse" style="--gx:960px;--gy:600px">
+  <div class="kick rv t1">Use case 03 · Close the loop</div>
+  <h2 class="title rv t2" style="font-size:58px">From a written answer to <em>closed open points.</em></h2>
+  <div class="ucol u-in">
+    <div class="uhead rv t3">You add</div>
+    <div class="file rv t3"><i>EML</i>Mail thread with the system owner</div>
+    <div class="uhead rv t4" style="margin-top:34px">You ask</div>
+    <div class="ask rv t5">“What does this answer resolve, and what is still missing?”</div>
+  </div>
+  <div class="ucol u-mid">
+    <div class="uhead rv t3">Behind the scenes</div>
+    <div class="mini stackbox"><div class="scene"><div class="stack"><div class="plane p1"></div><div class="plane p2"></div><div class="plane p3"></div><div class="plane p4"></div><div class="plane p5"></div></div></div></div>
+    <ol class="bts">
+      <li class="rv t4"><span class="ly">L2</span><em class="who c">CODE</em><span>Parsed message by message: author, date, <code>primary-doc</code></span></li>
+      <li class="rv t5"><span class="ly">L4</span><em class="who ac">AI + CODE</em><span>Answers matched to the open questions they address</span></li>
+      <li class="rv t6"><span class="ly">L5</span><em class="who a">AI</em><span>Claims strengthened, with the message as citation</span></li>
+      <li class="rv t7"><span class="ly">L5</span><em class="who ac">AI + CODE</em><span>Open points closed or narrowed; history kept</span></li>
+      <li class="rv t8"><span class="ly">L5</span><em class="who a">AI</em><span>Remaining gaps collected into a follow-up</span></li>
+    </ol>
+  </div>
+  <div class="ucol u-out">
+    <div class="uhead rv t3">You get</div>
+    <div class="doc rv t6">
+      <div class="dt">Register update</div>
+      <div class="dl"><span>OP-022 resolved → D-031</span><em class="ev v">closed</em></div>
+      <div class="dl"><span>OP-027 narrowed</span><em class="ev b">2 of 3 answered</em></div>
+      <div class="dl"><span>C-013 verbal → primary-doc</span><em class="ev p">mail 16 Sep</em></div>
+      <div class="dl"><span>Follow-up mail drafted</span><em class="ev q">2 questions</em></div>
+      <div class="dfoot">Nothing answered twice · nothing lost</div>
+    </div>
+  </div>
+  <div class="brand">Project Second Brain</div><div class="pg">14</div>
+</section>
+
+<!-- ================= USE CASE 4 — PLAN & WBS ================= -->
+<section class="slide uc pulse" style="--gx:960px;--gy:600px">
+  <div class="kick rv t1">Use case 04 · Plan the delivery</div>
+  <h2 class="title rv t2" style="font-size:58px">From what we know to a <em>delivery plan.</em></h2>
+  <div class="ucol u-in">
+    <div class="uhead rv t3">You add</div>
+    <div class="file rv t3"><i>—</i>Nothing new: the scope decision is already recorded</div>
+    <div class="uhead rv t4" style="margin-top:34px">You ask</div>
+    <div class="ask rv t5">“Build the phase plan and WBS for the agreed scope.”</div>
+  </div>
+  <div class="ucol u-mid">
+    <div class="uhead rv t3">Behind the scenes</div>
+    <div class="mini stackbox"><div class="scene"><div class="stack"><div class="plane p1"></div><div class="plane p2"></div><div class="plane p3"></div><div class="plane p4"></div><div class="plane p5"></div></div></div></div>
+    <ol class="bts">
+      <li class="rv t4"><span class="ly">L5</span><em class="who ac">AI + CODE</em><span>Scope read from recorded decisions</span></li>
+      <li class="rv t5"><span class="ly">L4</span><em class="who c">CODE</em><span>Objects in scope counted in SQL, never estimated by reading</span></li>
+      <li class="rv t6"><span class="ly">L4</span><em class="who c">CODE</em><span>Dependencies traced through the graph to order the work</span></li>
+      <li class="rv t7"><span class="ly">L5</span><em class="who a">AI</em><span>Every assumption behind an estimate becomes a claim</span></li>
+      <li class="rv t8"><span class="ly">L5</span><em class="who c">CODE</em><span>Plan generated as code: spreadsheet and slides</span></li>
+    </ol>
+  </div>
+  <div class="ucol u-out">
+    <div class="uhead rv t3">You get</div>
+    <div class="doc rv t6">
+      <div class="dt">Phase plan &amp; WBS</div>
+      <div class="dl"><span>WP1 Ingestion · 6 tasks</span><em class="ev q">SQL scope</em></div>
+      <div class="dl"><span>WP2 Validation · 4 tasks</span><em class="ev q">SQL scope</em></div>
+      <div class="dl chg"><span>Critical path: WP1 → WP4</span><em class="ev p">graph</em></div>
+      <div class="dl"><span>3 estimates on weak claims</span><em class="ev a">risk list</em></div>
+      <div class="dfoot">Re-generated when scope changes</div>
+    </div>
+  </div>
+  <div class="brand">Project Second Brain</div><div class="pg">15</div>
+</section>
+
+<!-- ================= USE CASE 5 — CONTRADICTION & IMPACT ================= -->
+<section class="slide uc pulse" style="--gx:960px;--gy:600px">
+  <div class="kick rv t1">Use case 05 · React to a contradiction</div>
+  <h2 class="title rv t2" style="font-size:58px">From a contradicting fact to <em>what must be revised.</em></h2>
+  <div class="ucol u-in">
+    <div class="uhead rv t3">You add</div>
+    <div class="file rv t3"><i>XML</i>Export from the live system</div>
+    <div class="uhead rv t4" style="margin-top:34px">You ask</div>
+    <div class="ask rv t5">“Does this change anything we have built on?”</div>
+  </div>
+  <div class="ucol u-mid">
+    <div class="uhead rv t3">Behind the scenes</div>
+    <div class="mini stackbox"><div class="scene"><div class="stack"><div class="plane p1"></div><div class="plane p2"></div><div class="plane p3"></div><div class="plane p4"></div><div class="plane p5"></div></div></div></div>
+    <ol class="bts">
+      <li class="rv t4"><span class="ly">L2</span><em class="who c">CODE</em><span>Export parsed as <code>verified</code>, the strongest evidence</span></li>
+      <li class="rv t5"><span class="ly">L5</span><em class="who a">AI</em><span>Compared with the registered claims: C-009 is contradicted</span></li>
+      <li class="rv t6"><span class="ly">L4</span><em class="who c">CODE</em><span>Graph walks every deliverable and decision built on C-009</span></li>
+      <li class="rv t7"><span class="ly">L5</span><em class="who ac">AI + CODE</em><span>Claim marked contradicted; an open point raised with an owner</span></li>
+      <li class="rv t8"><span class="ly">L5</span><em class="who ac">AI + CODE</em><span>Affected deliverables flagged for revision, never silently edited</span></li>
+    </ol>
+  </div>
+  <div class="ucol u-out">
+    <div class="uhead rv t3">You get</div>
+    <div class="doc rv t6">
+      <div class="dt">Impact report</div>
+      <div class="dl chg"><span>C-009 contradicted</span><em class="ev v">verified · export</em></div>
+      <div class="dl"><span>Blueprint · lineage section</span><em class="ev o">to revise</em></div>
+      <div class="dl"><span>Plan · WP2 estimate</span><em class="ev o">to revise</em></div>
+      <div class="dl"><span>Decision D-018 rests on it</span><em class="ev b">review</em></div>
+      <div class="dl"><span>OP-040 raised</span><em class="ev q">owner set</em></div>
+      <div class="dfoot">Know what breaks before it breaks</div>
+    </div>
+  </div>
+  <div class="brand">Project Second Brain</div><div class="pg">16</div>
+</section>
+
+<!-- ================= SENSITIVE DATA ================= -->
+<section class="slide" style="--gx:960px;--gy:820px">
+  <div class="kick rv t1">Sensitive documents</div>
+  <h2 class="title rv t2" style="font-size:64px">Sensitive data, <em>AI under control.</em></h2>
+  <div class="sec l rv t3">
+    <h3><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><rect x="14" y="28" width="36" height="26" rx="4"/><path d="M22 28v-8a10 10 0 0 1 20 0v8"/></svg>Built into the system</h3>
+    <ul>
+      <li>Originals stay local and are never versioned</li>
+      <li>Only derived documentation is shared</li>
+      <li>Guards stop any edit to the sources</li>
+      <li>Mail participants de-identified on import</li>
+      <li>Every change traceable, by whom and when</li>
+      <li>No source content sent to external services</li>
+    </ul>
+  </div>
+  <div class="sec r rv t4">
+    <h3><svg viewBox="0 0 64 64" fill="none" stroke="#2EC4B6" stroke-width="3"><path d="M14 10h28l8 8v36H14z"/><path d="M22 30h20M22 38h20M22 46h12"/></svg>Agreed at project start</h3>
+    <ul>
+      <li>Data-owner approval to process the documents with AI</li>
+      <li>Only AI tools approved by the data owner</li>
+      <li>Where the repository lives and who can access it</li>
+      <li>A sensitivity class for every document at triage</li>
+    </ul>
+  </div>
+  <p class="line rv t6" style="position:absolute;left:110px;top:900px;font-size:26px;width:1700px">Data minimisation by design: the model sees only the lines a question needs, never the whole archive.</p>
+  <div class="brand">Project Second Brain</div><div class="pg">17</div>
+</section>
+
+<!-- ================= 14. LESSONS ================= -->
+<section class="slide" style="--gx:960px;--gy:300px">
+  <div class="kick rv t1">Tested in practice</div>
+  <h2 class="title rv t2" style="font-size:64px">What real projects taught us.</h2>
+  <div class="lessons">
+    <div class="lesson rv t3"><b>Quarantine inherited AI work.</b><span>Most of it had never been checked.</span></div>
+    <div class="lesson rv t4"><b>Prose rules drift. Code rules hold.</b><span>Consistency returned once rules were checks.</span></div>
+    <div class="lesson rv t5"><b>Keep review gates cheap.</b><span>A short checklist beats "review everything".</span></div>
+    <div class="lesson rv t6"><b>Determinism first, AI for judgment.</b><span>Read lines, not files: fewer tokens, fewer errors.</span></div>
+  </div>
+  <div class="brand">Project Second Brain</div><div class="pg">18</div>
+</section>
+
+<!-- ================= 15. WHY IT MATTERS ================= -->
+<section class="slide" style="--gx:960px;--gy:700px">
+  <div class="kick rv t1">Why it matters</div>
+  <h2 class="title rv t2">A delivery asset, <em>ready to reuse.</em></h2>
+  <div class="vals">
+    <div class="val rv t3"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><rect x="8" y="8" width="20" height="20" rx="3"/><rect x="36" y="8" width="20" height="20" rx="3"/><rect x="8" y="36" width="20" height="20" rx="3"/><rect x="36" y="36" width="20" height="20" rx="3"/></svg><div><b>Reusable accelerator</b><span>one scaffolding for migrations, transformations, multi-party programmes</span></div></div>
+    <div class="val rv t4"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><path d="M10 50l14-14 10 10 20-24"/><path d="M42 22h12v12"/></svg><div><b>Faster onboarding</b><span>people and agents ask the brain instead of re-reading months of material</span></div></div>
+    <div class="val rv t5"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><circle cx="28" cy="28" r="16"/><path d="M40 40l14 14"/></svg><div><b>Consistent quality</b><span>every deliverable cited, every assumption visible</span></div></div>
+    <div class="val rv t6"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><path d="M32 8L58 54H6z"/><path d="M32 26v12M32 44v2"/></svg><div><b>Less rework</b><span>contradictions surface the day they arrive</span></div></div>
+    <div class="val rv t7"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><circle cx="32" cy="32" r="22"/><path d="M32 18v14l9 6"/></svg><div><b>Lower AI cost</b><span>code counts, checks and indexes; the model reads lines</span></div></div>
+    <div class="val rv t8"><svg viewBox="0 0 64 64" fill="none" stroke="#4F7CFF" stroke-width="3"><rect x="14" y="28" width="36" height="26" rx="4"/><path d="M22 28v-8a10 10 0 0 1 20 0v8"/></svg><div><b>Trusted by stakeholders</b><span>evidence-backed answers, data kept under control</span></div></div>
+  </div>
+  <div class="brand">Project Second Brain</div><div class="pg">19</div>
+</section>
+
+<!-- ================= 16. CLOSING ================= -->
+<section class="slide" style="--gx:1350px;--gy:560px">
+  <div class="kick rv t1">The takeaway</div>
+  <h2 class="close-h rv t2">Organise it. Encode it. Let agents <em>work on it.</em></h2>
+  <p class="line rv t3" style="position:absolute;left:110px;top:760px;width:760px">The model does the reading and writing. The repository keeps it honest.</p>
+  <div class="stackbox" style="left:1080px;top:250px">
+    <div class="scene"><div class="stack"><div class="plane p1"></div><div class="plane p2"></div><div class="plane p3"></div><div class="plane p4"></div><div class="plane p5"></div></div></div>
+  </div>
+</section>
+
+</main>
+</div>
+<div class="deck-controls"><span class="counter" id="counter">1 / 20</span></div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Keyboard (arrows, space, PgUp/PgDn, Home/End), wheel, swipe, #n deep links
+   =========================================== */
+class SlidePresentation {
+  constructor() {
+    this.slides = document.querySelectorAll('.slide');
+    this.stage = document.getElementById('deckStage');
+    this.current = 0; this.lock = false;
+    this.setupStageScale(); this.setupNav();
+    const h = parseInt(location.hash.slice(1), 10);
+    this.show(Number.isFinite(h) ? h - 1 : 0);
+  }
+  setupStageScale() {
+    const scale = () => {
+      const f = Math.min(innerWidth / 1920, innerHeight / 1080);
+      this.stage.style.transform = `translate(${(innerWidth - 1920 * f) / 2}px, ${(innerHeight - 1080 * f) / 2}px) scale(${f})`;
+    };
+    scale(); addEventListener('resize', scale);
+  }
+  setupNav() {
+    document.addEventListener('keydown', e => {
+      if (document.body.classList.contains('editing')) return;
+      if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); this.show(this.current + 1); }
+      if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); this.show(this.current - 1); }
+      if (e.key === 'Home') this.show(0);
+      if (e.key === 'End') this.show(this.slides.length - 1);
+    });
+    addEventListener('wheel', e => {
+      if (this.lock || Math.abs(e.deltaY) < 30) return;
+      this.lock = true; setTimeout(() => this.lock = false, 800);
+      this.show(this.current + (e.deltaY > 0 ? 1 : -1));
+    }, { passive: true });
+    let sx = 0;
+    addEventListener('touchstart', e => sx = e.touches[0].clientX, { passive: true });
+    addEventListener('touchend', e => { const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 50) this.show(this.current + (dx < 0 ? 1 : -1)); });
+  }
+  show(i) {
+    this.current = Math.max(0, Math.min(i, this.slides.length - 1));
+    this.slides.forEach((s, k) => { s.classList.toggle('active', k === this.current); s.classList.toggle('visible', k === this.current); });
+    document.getElementById('counter').textContent = `${this.current + 1} / ${this.slides.length}`;
+    document.getElementById('progress').style.width = `${(this.current + 1) / this.slides.length * 100}%`;
+    history.replaceState(null, '', `#${this.current + 1}`);
+  }
+}
+new SlidePresentation();
+
+/* ===========================================
+   INLINE EDITOR — E toggles, Ctrl+S downloads the edited file
+   =========================================== */
+const editor = {
+  isActive: false, key: 'second-brain-layerstack-v2',
+  els() { return document.querySelectorAll('.slide h1, .slide h2, .slide h3, .slide p, .slide .kick, .slide .pill, .slide .chip, .slide .lab span, .slide .lab small, .slide .fact b, .slide .fact span, .slide .lesson b, .slide .lesson span, .slide .val b, .slide .val span, .slide .out, .slide .big'); },
+  toggleEditMode() {
+    this.isActive = !this.isActive;
+    document.body.classList.toggle('editing', this.isActive);
+    document.getElementById('editToggle').classList.toggle('active', this.isActive);
+    this.els().forEach(el => el.setAttribute('contenteditable', this.isActive ? 'true' : 'false'));
+    if (!this.isActive) this.save();
+  },
+  save() { try { localStorage.setItem(this.key, JSON.stringify([...this.els()].map(e => e.innerHTML))); } catch (e) {} },
+  load() { try { const s = JSON.parse(localStorage.getItem(this.key) || 'null'); if (s) this.els().forEach((el, i) => { if (s[i] !== undefined) el.innerHTML = s[i]; }); } catch (e) {} },
+  download() {
+    this.save();
+    const c = document.documentElement.cloneNode(true);
+    c.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+    c.querySelector('body').classList.remove('editing');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['<!DOCTYPE html>\n' + c.outerHTML], { type: 'text/html' }));
+    a.download = 'second-brain-approach.html'; a.click();
+  }
+};
+editor.load();
+const editToggle = document.getElementById('editToggle'), hotzone = document.querySelector('.edit-hotzone');
+let hideTimeout = null;
+editToggle.addEventListener('click', () => editor.toggleEditMode());
+hotzone.addEventListener('click', () => editor.toggleEditMode());
+hotzone.addEventListener('mouseenter', () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); });
+hotzone.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+editToggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+editToggle.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+document.addEventListener('keydown', e => {
+  if ((e.key === 'e' || e.key === 'E') && e.target.getAttribute('contenteditable') !== 'true') editor.toggleEditMode();
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); editor.download(); }
+});
+</script>
+</body>
+</html>

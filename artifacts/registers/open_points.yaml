@@ -1,0 +1,6 @@
+meta:
+  title: Open points
+  heading: Open points
+  updated: 2026-01-01
+  preamble: Questions we cannot answer from the evidence yet. Each has an owner and the impact of leaving it unresolved. Edit `open_points.yaml` (or use `/capture op ...`); this view is generated.
+items: []

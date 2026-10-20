@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 440" width="1400" height="440" role="img" aria-labelledby="t d">
+  <title id="t">Evidence levels</title>
+  <desc id="d">Five evidence levels from strongest to weakest: verified, primary-doc and verbal can be stated as fact with a citation; derived-llm and assumed are hypotheses and are never stated as fact.</desc>
+  <defs>
+    <linearGradient id="b1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4F7CFF"/><stop offset="1" stop-color="#7FA0FF"/></linearGradient>
+    <linearGradient id="b2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7FA0FF"/><stop offset="1" stop-color="#2EC4B6"/></linearGradient>
+    <style>
+      .sans { font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace; }
+      .kick { font-size: 16px; letter-spacing: 5px; fill: #2EC4B6; }
+      .h2 { font-size: 34px; font-weight: 800; fill: #FFFFFF; }
+      .lv { font-size: 19px; font-weight: 700; }
+      .what { font-size: 15px; }
+      .side { font-size: 14px; letter-spacing: 3px; }
+    </style>
+  </defs>
+  <rect width="1400" height="440" rx="28" fill="#0E0D12"/>
+  <text x="64" y="72" class="sans kick">THE TRUST MODEL</text>
+  <text x="62" y="116" class="sans h2">Five evidence levels. Only three are facts.</text>
+
+  <g class="sans">
+    <rect x="64" y="150" width="1000" height="44" rx="10" fill="url(#b1)"/>
+    <text x="84" y="179" class="mono lv" fill="#FFFFFF">verified</text>
+    <text x="300" y="178" class="what" fill="#FFFFFF">system export, DDL, source code, system catalog</text>
+
+    <rect x="64" y="204" width="880" height="44" rx="10" fill="url(#b2)"/>
+    <text x="84" y="233" class="mono lv" fill="#0E0D12">primary-doc</text>
+    <text x="300" y="232" class="what" fill="#0E0D12">a document by whoever owns the subject</text>
+
+    <rect x="64" y="258" width="760" height="44" rx="10" fill="#2EC4B6" fill-opacity=".22" stroke="#2EC4B6" stroke-width="1.5"/>
+    <text x="84" y="287" class="mono lv" fill="#FFFFFF">verbal</text>
+    <text x="300" y="286" class="what" fill="#ECE6EF">meeting, workshop, chat — attributed and dated</text>
+
+    <rect x="64" y="312" width="640" height="44" rx="10" fill="none" stroke="#9B78FF" stroke-width="1.5" stroke-dasharray="7 6"/>
+    <text x="84" y="341" class="mono lv" fill="#CFC9D3">derived-llm</text>
+    <text x="300" y="340" class="what" fill="#CFC9D3">produced by an LLM — a hypothesis</text>
+
+    <rect x="64" y="366" width="520" height="44" rx="10" fill="none" stroke="#8E8794" stroke-width="1.5" stroke-dasharray="7 6"/>
+    <text x="84" y="395" class="mono lv" fill="#8E8794">assumed</text>
+    <text x="300" y="394" class="what" fill="#8E8794">our own inference — labelled</text>
+  </g>
+
+  <g class="sans">
+    <path d="M1110 150 V302" stroke="#4F7CFF" stroke-width="3"/>
+    <text x="1132" y="218" class="side" fill="#FFFFFF">STATED AS FACT</text>
+    <text x="1132" y="242" class="what" fill="#CFC9D3">always with path#lines</text>
+    <path d="M1110 312 V410" stroke="#8E8794" stroke-width="3" stroke-dasharray="6 6"/>
+    <text x="1132" y="356" class="side" fill="#CFC9D3">NEVER A FACT</text>
+    <text x="1132" y="380" class="what" fill="#8E8794">a claim to verify</text>
+  </g>
+</svg>

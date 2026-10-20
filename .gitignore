@@ -1,0 +1,43 @@
+# ---------------------------------------------------------------------------
+# Raw project material — usually confidential. Never versioned.
+# Only source/MANIFEST.md is tracked, as the register of what was received.
+# (the "!source/**/" line re-includes directories so Git can descend into them)
+# ---------------------------------------------------------------------------
+source/**/*
+!source/**/
+!source/MANIFEST.md
+!source/**/.gitkeep
+inbox/*
+!inbox/.gitkeep
+!inbox/README.md
+
+# Extraction output (derived from source material)
+source/_extracted/
+metadata/extraction_report.md
+
+# ---------------------------------------------------------------------------
+# Derived / rebuildable artefacts
+# ---------------------------------------------------------------------------
+metadata/*.duckdb
+metadata/*.duckdb.wal
+metadata/*.parquet
+.cache/
+.docling/
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ---------------------------------------------------------------------------
+# OS / editor / sync-client noise
+# ---------------------------------------------------------------------------
+Thumbs.db
+desktop.ini
+~$*
+.DS_Store
+.claude/settings.local.json

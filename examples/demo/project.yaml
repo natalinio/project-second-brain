@@ -1,0 +1,5 @@
+project_name: Order platform demo
+description: Review of how orders flow from the order service into the reporting warehouse (fictional demo)
+language: en
+domains: [orders, customers, reporting]
+owners: [Data team, Finance team, Order service team, TBD]

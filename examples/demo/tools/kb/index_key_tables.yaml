@@ -1,0 +1,2 @@
+key_tables:
+  - {table: orders_sample, what: "Masked sample of order lines (demo)"}

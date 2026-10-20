@@ -1,0 +1,15 @@
+# Structured sources of the knowledge graph — demo configuration.
+# See the skeleton version of this file for the full syntax.
+sources:
+  - name: data flows
+    type: csv
+    path: metadata/lineage/flows.csv
+    evidence: primary-doc
+    nodes:
+      - {column: source, kind: table}
+      - {column: target, kind: table}
+      - {column: job,    kind: job}
+    edges:
+      - {src: source, dst: target, rel: feeds, attr: [job, frequency]}
+      - {src: job, dst: source, rel: reads}
+      - {src: job, dst: target, rel: writes}

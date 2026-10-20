@@ -1,0 +1,6 @@
+meta:
+  title: Decisions
+  heading: Decisions
+  updated: 2026-01-01
+  preamble: Decisions taken, with rationale and a reference (an ADR, an OP it resolves, a meeting). Edit `decisions.yaml` (or `/capture decision ...`); this view is generated.
+items: []

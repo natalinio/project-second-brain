@@ -1,0 +1,24 @@
+# Curated concept dictionary for the knowledge graph (tools/kb/build_graph.py).
+#
+# Identifiers (table, job, file, service names...) come from tools/kb/graph_sources.yaml.
+# This file is for the *concepts* people write about in prose: systems, parties, business
+# concepts, project phases. Each alias is matched case-insensitively as a whole word.
+# Add the misspellings and transcription garbles you find in meeting transcripts.
+#
+#   id:       stable node id, UPPER_SNAKE
+#   kind:     system | party | concept | phase | ... (free vocabulary)
+#   aliases:  first one is the display label
+#
+# When /ask misses a name that exists in the corpus, add it here and run
+# `uv run python tools/kb/refresh.py`.
+#
+# Example:
+#
+# concepts:
+#   - {id: CRM,        kind: system,  aliases: [CRM, Customer Relationship Management]}
+#   - {id: ERP,        kind: system,  aliases: [ERP, the ledger]}
+#   - {id: OPS_TEAM,   kind: party,   aliases: [operations team, ops team]}
+#   - {id: CHURN,      kind: concept, aliases: [churn, customer churn, attrition]}
+#   - {id: PHASE_1,    kind: phase,   aliases: [phase 1, phase one, wave 1]}
+
+concepts: []

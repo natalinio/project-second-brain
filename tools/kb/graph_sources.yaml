@@ -1,0 +1,48 @@
+# Structured sources the knowledge graph is built from (tools/kb/build_graph.py).
+#
+# Every row of a source yields nodes (one per declared column) and edges between them.
+# Node ids are the identifiers as written; their aliases are matched verbatim in every
+# note, so `graph.py about <ID>` finds the exact sections that talk about it.
+#
+#   name:      free label, shown when a source is skipped
+#   type:      csv  -> `path` relative to the repo root (UTF-8, header row)
+#              sql  -> `query` run against the structured DB (schema.yaml: structured_db),
+#                      e.g. a table loaded by tools/ingest/build_inventory.py
+#   evidence:  evidence level of every edge from this source (schema.yaml: evidence)
+#   nodes:     - column: <col>   kind: <job|table|file|service|...>
+#                label: <col>    optional, human label
+#                split: <regex>  optional, the cell holds several ids (e.g. "[;,\n]+")
+#   edges:     - src: <col>  dst: <col>  rel: <verb>   (feeds, reads, writes, calls, owns ...)
+#                attr: [<col>, ...]   optional, joined into the edge attribute
+#                evidence: <level>    optional override
+#
+# `feeds` edges are what `graph.py about` shows as upstream/downstream and what
+# `graph.py path` follows; any other verb is listed as a relation.
+#
+# Example (uncomment and point it at your own file):
+#
+# sources:
+#   - name: data flows
+#     type: csv
+#     path: metadata/lineage/flows.csv          # columns: source,target,job,frequency
+#     evidence: primary-doc
+#     nodes:
+#       - {column: source, kind: table}
+#       - {column: target, kind: table}
+#       - {column: job,    kind: job}
+#     edges:
+#       - {src: source, dst: target, rel: feeds, attr: [job, frequency]}
+#       - {src: job, dst: source, rel: reads}
+#       - {src: job, dst: target, rel: writes}
+#
+#   - name: service catalogue
+#     type: sql
+#     query: SELECT service_name, depends_on FROM services_catalogue
+#     evidence: verified
+#     nodes:
+#       - {column: service_name, kind: service}
+#       - {column: depends_on,   kind: service, split: "[;,]+"}
+#     edges:
+#       - {src: depends_on, dst: service_name, rel: feeds}
+
+sources: []

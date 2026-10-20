@@ -1,0 +1,11 @@
+meta:
+  title: Decisions
+  heading: Decisions
+  updated: 2026-02-05
+  preamble: Decisions taken, with rationale (fictional demo).
+items:
+- id: D-001
+  date: 2026-02-05
+  decision: Reporting keeps cancelled orders visible for 180 days.
+  rationale: The written finance requirement (primary-doc, 2026-02-03) outranks the kickoff recollection.
+  ref: OP-001
